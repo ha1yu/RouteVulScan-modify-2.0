@@ -21,6 +21,9 @@ public class Config {
     public JTabbedPane ruleTabbedPane;
 
     private JTextField hostFilterField;
+    private JTextField blacklistField;
+    private JButton saveHostListsButton;
+    private JLabel hostListsStateLabel;
     private JComboBox<LanguageOption> languageBox;
     private JLabel setupSummaryLabel;
     private JLabel progressSummaryLabel;
@@ -108,9 +111,19 @@ public class Config {
             updateStatusLabel();
         });
 
-        hostFilterField = new JTextField("*", 28);
+        // 白名单：从已加载的持久化快照回填，编辑文本不立即生效，需点击保存按钮才应用并持久化。
+        hostFilterField = new JTextField(burp.getActiveWhitelist(), 28);
         hostFilterField.getDocument().addDocumentListener(SimpleDocumentListener.onChange(this::syncHostFilter));
         burp.Host_txtfield = hostFilterField;
+
+        // 黑名单：逗号分隔，子串匹配，与白名单共用一个保存按钮。
+        blacklistField = new JTextField(burp.getActiveBlacklistJoined(), 28);
+        blacklistField.setToolTipText(t("tooltip.blacklist"));
+        blacklistField.getDocument().addDocumentListener(SimpleDocumentListener.onChange(this::updateStatusLabel));
+
+        saveHostListsButton = localizedButton("button.saveHostLists");
+        saveHostListsButton.setToolTipText(t("tooltip.saveHostLists"));
+        saveHostListsButton.addActionListener(e -> saveHostLists());
 
         languageBox = new JComboBox<LanguageOption>();
         populateLanguageBox();
@@ -130,14 +143,24 @@ public class Config {
         controls.add(spinner1);
         controls.add(localizedLabel("label.hostFilter"));
         controls.add(hostFilterField);
+        controls.add(localizedLabel("label.blacklist"));
+        controls.add(blacklistField);
+        controls.add(saveHostListsButton);
         controls.add(localizedLabel("label.language"));
         controls.add(languageBox);
 
         setupSummaryLabel = new JLabel();
         setupSummaryLabel.setForeground(new Color(80, 80, 80));
 
+        hostListsStateLabel = new JLabel(" ");
+        hostListsStateLabel.setForeground(new Color(80, 80, 80));
+
+        JPanel southPanel = new JPanel(new BorderLayout(12, 2));
+        southPanel.add(setupSummaryLabel, BorderLayout.NORTH);
+        southPanel.add(hostListsStateLabel, BorderLayout.SOUTH);
+
         panel.add(controls, BorderLayout.NORTH);
-        panel.add(setupSummaryLabel, BorderLayout.SOUTH);
+        panel.add(southPanel, BorderLayout.SOUTH);
         updateStatusLabel();
         return panel;
     }
@@ -328,6 +351,20 @@ public class Config {
         updateStatusLabel();
     }
 
+    /**
+     * 同时保存白名单与黑名单：刷新实时过滤快照、写入 Burp preferences，并在状态行显示反馈。
+     * 白名单留空会自动当作 "*"（全部放行），与历史默认行为一致。
+     */
+    private void saveHostLists() {
+        String whitelist = hostFilterField.getText().trim();
+        String blacklist = blacklistField.getText().trim();
+        burp.saveHostLists(whitelist, blacklist);
+        // 回填规整后的白名单（空 -> "*"），让用户直观看到实际生效值。
+        hostFilterField.setText(burp.getActiveWhitelist());
+        hostListsStateLabel.setText(t("prompt.hostListsSaved"));
+        updateStatusLabel();
+    }
+
     private void updateStatusLabel() {
         if (setupSummaryLabel == null) {
             return;
@@ -337,7 +374,8 @@ public class Config {
                         + (burp.on_off ? t("label.passiveOn") : t("label.passiveOff"))
                         + " | " + t("label.threads") + " " + burp.getConfiguredThreadCount()
                         + " | " + t("label.headers") + " " + (burp.Carry_head ? t("state.on") : t("state.off"))
-                        + " | " + t("label.filter") + " " + hostFilterField.getText().trim()
+                        + " | " + t("label.filter") + " " + burp.getActiveWhitelist()
+                        + " | " + t("label.blacklistCount", burp.getActiveBlacklistSize())
         );
     }
 
@@ -379,6 +417,12 @@ public class Config {
                 refreshComponentText(one);
                 applyToggleState(scanningButton, burp.on_off, "button.passiveScan");
                 applyToggleState(headersButton, burp.Carry_head, "button.carryHeaders");
+                if (blacklistField != null) {
+                    blacklistField.setToolTipText(t("tooltip.blacklist"));
+                }
+                if (saveHostListsButton != null) {
+                    saveHostListsButton.setToolTipText(t("tooltip.saveHostLists"));
+                }
                 populateLanguageBox();
                 updateStatusLabel();
                 refreshProgressView();

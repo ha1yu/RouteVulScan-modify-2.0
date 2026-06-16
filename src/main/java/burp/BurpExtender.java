@@ -33,6 +33,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -44,8 +47,10 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
 
     public static String Yaml_Path = System.getProperty("user.dir") + "/" + "Rules.yaml";
     public static String EXPAND_NAME = "RouteVulScan";
-    public static String VERSION = "2.0.3";
+    public static String VERSION = "2.0.4";
     private static final String LANGUAGE_PREFERENCE_KEY = "routevulscan.language";
+    private static final String WHITELIST_PREFERENCE_KEY = "routevulscan.whitelist";
+    private static final String BLACKLIST_PREFERENCE_KEY = "routevulscan.blacklist";
     public static String Download_Yaml_protocol = "https";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
     public static int Download_Yaml_port = 443;
@@ -75,12 +80,19 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
     private final AtomicInteger timeoutCount = new AtomicInteger(0);
     private final AtomicInteger skippedPaths = new AtomicInteger(0);
 
+    // 实时过滤使用的快照：volatile，HTTP 线程读、EDT 写（保存按钮触发）。
+    // 白名单沿用 *.->.*? 的极简通配符正则转换；黑名单为子串匹配集合（已小写化）。
+    private volatile String activeWhitelist = "*";
+    private volatile Set<String> activeBlacklist = Collections.emptySet();
+
     @Override
     public void initialize(MontoyaApi api) {
         this.api = api;
         this.logging = api.logging();
         staticLogging = this.logging;
         I18n.setLanguage(loadLanguagePreference());
+        activeWhitelist = loadHostListPreference(WHITELIST_PREFERENCE_KEY, "*");
+        activeBlacklist = parseBlacklist(loadHostListPreference(BLACKLIST_PREFERENCE_KEY, ""));
         api.extension().setName(EXPAND_NAME);
         api.extension().registerUnloadingHandler(new ExtensionUnloadingHandler() {
             @Override
@@ -127,6 +139,67 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
         } catch (Throwable t) {
             return I18n.DEFAULT_LANGUAGE;
         }
+    }
+
+    private String loadHostListPreference(String key, String fallback) {
+        if (api == null) {
+            return fallback;
+        }
+        try {
+            String value = api.persistence().preferences().getString(key);
+            return value == null ? fallback : value;
+        } catch (Throwable t) {
+            return fallback;
+        }
+    }
+
+    /**
+     * 同时保存白名单与黑名单：刷新实时过滤快照并写入 Burp preferences（重启保留）。
+     * 仅在 EDT（保存按钮回调）中调用，故对 volatile 字段的写是安全的。
+     */
+    public void saveHostLists(String whitelist, String blacklist) {
+        String trimmedWhitelist = whitelist == null ? "" : whitelist.trim();
+        activeWhitelist = trimmedWhitelist.isEmpty() ? "*" : trimmedWhitelist;
+        activeBlacklist = parseBlacklist(blacklist);
+        if (api != null) {
+            api.persistence().preferences().setString(WHITELIST_PREFERENCE_KEY, trimmedWhitelist);
+            api.persistence().preferences().setString(BLACKLIST_PREFERENCE_KEY, blacklist == null ? "" : blacklist.trim());
+        }
+    }
+
+    public String getActiveWhitelist() {
+        return activeWhitelist;
+    }
+
+    public int getActiveBlacklistSize() {
+        return activeBlacklist.size();
+    }
+
+    /**
+     * 把黑名单集合按逗号拼回字符串，用于回填 UI 输入框。
+     */
+    public String getActiveBlacklistJoined() {
+        if (activeBlacklist.isEmpty()) {
+            return "";
+        }
+        return String.join(",", activeBlacklist);
+    }
+
+    /**
+     * 解析逗号分隔的黑名单，统一小写化，去空白与重复。
+     */
+    private static Set<String> parseBlacklist(String blacklist) {
+        if (blacklist == null || blacklist.trim().isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> set = new LinkedHashSet<String>();
+        for (String part : blacklist.split(",")) {
+            String s = part.trim().toLowerCase();
+            if (!s.isEmpty()) {
+                set.add(s);
+            }
+        }
+        return set;
     }
 
     public void setLanguage(String language) {
@@ -409,7 +482,22 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
                 return;
             }
             String host = requestResponse.httpService().host();
-            String re = Host_txtfield.getText().replace(".", "\\.").replace("*", ".*?");
+
+            // 黑名单优先：host 子串命中任一黑名单条目（忽略大小写）即跳过。
+            Set<String> blacklist = activeBlacklist;
+            if (!blacklist.isEmpty()) {
+                String hostLower = host.toLowerCase();
+                for (String entry : blacklist) {
+                    if (hostLower.contains(entry)) {
+                        return;
+                    }
+                }
+            }
+
+            // 白名单沿用 *.->.*? 的极简通断正则转换，但读取 volatile 快照，
+            // 避免在 HTTP 线程直接读 Swing 组件（Host_txtfield）造成跨线程访问。
+            String whitelist = activeWhitelist;
+            String re = whitelist.replace(".", "\\.").replace("*", ".*?");
             Pattern pattern = Pattern.compile(re);
             Matcher matcher = pattern.matcher(host);
             if (!matcher.find()) {

@@ -52,7 +52,7 @@ This repository is a second-maintained version of the original project with comp
 - Active scanning: select a request from the context menu and send it to RouteVulScan.
 - Rule engine: rules are stored in `Rules.yaml` and support categories, enabled states, regular expressions, and status code ranges.
 - Request template variables: rules can reference fields from the original request or response.
-- Scan controls: supports thread count, host filtering, and carrying request headers.
+- Scan controls: supports thread count, domain whitelist and blacklist (passive scan only), and carrying request headers.
 - Results panel: displays matched results, request packets, response packets, and supports filtering duplicate items with the same response length.
 
 ## Requirements
@@ -70,7 +70,7 @@ mvn clean package
 After the build completes, the artifact is located at:
 
 ```bash
-target/RouteVulScan-V2.0.3.jar
+target/RouteVulScan-V2.0.4.jar
 ```
 
 ## Installation
@@ -81,16 +81,24 @@ Open the following in Burp Suite:
 Extender -> Extensions -> Add
 ```
 
-Select `target/RouteVulScan-V2.0.3.jar` to load the extension.
+Select `target/RouteVulScan-V2.0.4.jar` to load the extension.
 
 ## Usage
 
 1. Load the extension in Burp.
 2. On first startup, the extension will generate or use `Rules.yaml` in the current working directory.
 3. Enable the options you need on the configuration page, such as passive scanning and carrying request headers.
-4. Test the target site normally. The extension will automatically and recursively check each path level.
-5. View matched records on the results page, along with the corresponding request and response.
-6. To run supplemental scanning for a specific site, right-click a request and send it to RouteVulScan.
+4. Configure the domain whitelist and blacklist as needed, then click "Save Lists" to apply and persist them (retained after restart).
+5. Test the target site normally. The extension will automatically and recursively check each path level.
+6. View matched records on the results page, along with the corresponding request and response.
+7. To run supplemental scanning for a specific site, right-click a request and send it to RouteVulScan.
+
+## Whitelist & Blacklist
+
+- The whitelist and blacklist take effect only for **passive scanning**; the right-click active scan is not restricted by them.
+- The whitelist keeps the original host-filter wildcard rules (`.` is escaped to `\.`, `*` becomes `.*?`).
+- The blacklist accepts multiple domains separated by commas and matches the host by **substring** (case-insensitive). Note that look-alike substrings may be false positives (e.g. `evil.com` also matches `notevil.com`).
+- Editing the input fields does **not** take effect until you click "Save Lists", which also writes the values to the Burp configuration. Until saved, the scanner keeps using the last saved values.
 
 ## Rule Description
 
