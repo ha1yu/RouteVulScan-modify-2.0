@@ -117,8 +117,6 @@ The rule file is `Rules.yaml`. Each rule can define:
 
 - Original author: F6JO
 
-[![Stargazers over time](https://starchart.cc/ThestaRY7/RouteVulScan-2.0.svg?variant=adaptive)](https://starchart.cc/ThestaRY7/RouteVulScan-2.0)
-
 ## Disclaimer
 
 This tool is intended only for enterprise-owned security improvement, authorized security testing, and risk investigation within the scope granted by the asset owner. The purpose of this project is to help authorized parties improve the security protection capabilities of their own business systems. Before using this tool, any individual or organization must ensure that they have obtained legal authorization for the target system and comply with all applicable laws and regulations in their country or region.

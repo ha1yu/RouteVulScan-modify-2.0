@@ -54,7 +54,7 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
     public static String Download_Yaml_protocol = "https";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
     public static int Download_Yaml_port = 443;
-    public static String Download_Yaml_file = "/ThestaRY7/RouteVulScan-2.0/main/Rules.yaml";
+    public static String Download_Yaml_file = "/ha1yu/RouteVulScan-modify-2.0/main/Rules.yaml";
 
     private static Logging staticLogging;
 

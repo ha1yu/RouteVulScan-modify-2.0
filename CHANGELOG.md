@@ -53,7 +53,7 @@
 - 规则文件从 `Config_yaml.yaml` 重命名为 `Rules.yaml`，插件启动、规则读取、规则写入与文档说明均改为使用新文件名。
 - `更新规则` 按钮重命名为 `云端下载规则`，英文文案为 `Cloud Download Rules`。
 - `重新加载规则` 按钮重命名为 `本地重载规则`，英文文案为 `Local Reload Rules`。
-- `云端下载规则` 现在从 `https://raw.githubusercontent.com/ThestaRY7/RouteVulScan-2.0/main/Rules.yaml` 下载规则，并校验 HTTP 状态码与规则内容有效性。
+- `云端下载规则` 现在从 `https://raw.githubusercontent.com/ha1yu/RouteVulScan-modify-2.0/main/Rules.yaml` 下载规则，并校验 HTTP 状态码与规则内容有效性。
 - 扫描调度与规则请求执行分离：新增独立扫描协调线程，规则请求继续使用可配置工作线程池，避免协调任务与规则任务互相阻塞。
 
 ## 2026-04-30 / v2.0.1
