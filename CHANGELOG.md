@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-17 / v2.0.6
+
+### 修复
+
+- 修复扫描任务计数泄漏：规则任务触发 `invokeAll` 31 秒超时被取消时，`runningTasks` 只增不减，导致进度面板"运行中任务"数字单调上涨。改为 `noteTaskStarted` / `noteTaskFinished` 严格配对（取消/超时也计 finished）。
+- 修复 `StatusCodeProc` 对非法 `state`（`null` / 空 / `abc` / `200-` / `200,xyz` 等）抛 `NumberFormatException` 或 `ArrayIndexOutOfBoundsException`，导致该规则静默失败。改为 null/空校验 + 捕获 `RuntimeException` 返回空集合跳过。
+- 修复 `on_off`（被动扫描开关）与 `Carry_head`（携带请求头开关）跨线程读写未声明 `volatile`，导致 EDT 切换后扫描线程可能长期看不到新值（开关"似乎没生效"）。两个字段改为 `volatile`。
+- 修复 `UrlRepeat` 用非线程安全 `HashMap` 在并发 HTTP 回调下损坏表结构的风险，改用 `ConcurrentHashMap`；并把去重的 check-then-act 两步合并为原子的 `markIfAbsent`，消除并发重复扫描竞态。
+
+### 新增
+
+- 新增单元测试 `StatusCodeProcTest`（11 例）与 `UrlRepeatTest`（10 例），覆盖非法输入健壮性与去重原子语义。测试用例总计达 **59 个**，全部通过。
+
 ## 2026-06-17 / v2.0.5
 
 ### 变更

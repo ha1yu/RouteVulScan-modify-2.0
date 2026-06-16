@@ -33,7 +33,9 @@ public class threads implements Runnable {
             counted = true;
             go(this.zidian, this.vul, this.newHttpRequestResponse);
         } finally {
-            if (counted && !vul.isCancelled()) {
+            // 计数必须与 started 严格配对：一旦计了 started，无论取消/超时/异常都要计 finished，
+            // 否则 invokeAll 超时取消的任务会让 runningTasks 单调递增。
+            if (counted) {
                 vul.burp.noteTaskFinished();
             }
         }

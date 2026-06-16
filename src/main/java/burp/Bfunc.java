@@ -57,31 +57,42 @@ public class Bfunc {
 
     public static Collection<Integer> StatusCodeProc(String state) {
         Collection<Integer> stateList = new ArrayList<Integer>();
-        if (state.length() != 3 && (state.contains(",") || state.contains("-"))) {
-            if (state.contains(",")) {
-                String[] states = state.split(",");
-                for (String oneState : states) {
-                    if (oneState.contains("-")) {
-                        String[] parts = oneState.split("-");
-                        int start = Integer.parseInt(parts[0]);
-                        int end = Integer.parseInt(parts[1]);
-                        for (int i = start; i <= end; i++) {
-                            stateList.add(i);
+        if (state == null || state.trim().isEmpty()) {
+            return stateList;
+        }
+        state = state.trim();
+        try {
+            if (state.length() != 3 && (state.contains(",") || state.contains("-"))) {
+                if (state.contains(",")) {
+                    String[] states = state.split(",");
+                    for (String oneState : states) {
+                        oneState = oneState.trim();
+                        if (oneState.contains("-")) {
+                            String[] parts = oneState.split("-");
+                            int start = Integer.parseInt(parts[0]);
+                            int end = Integer.parseInt(parts[1]);
+                            for (int i = start; i <= end; i++) {
+                                stateList.add(i);
+                            }
+                        } else if (oneState.length() == 3) {
+                            stateList.add(Integer.valueOf(oneState));
                         }
-                    } else if (oneState.length() == 3) {
-                        stateList.add(Integer.valueOf(oneState));
+                    }
+                } else {
+                    String[] parts = state.split("-");
+                    int start = Integer.parseInt(parts[0]);
+                    int end = Integer.parseInt(parts[1]);
+                    for (int i = start; i <= end; i++) {
+                        stateList.add(i);
                     }
                 }
             } else {
-                String[] parts = state.split("-");
-                int start = Integer.parseInt(parts[0]);
-                int end = Integer.parseInt(parts[1]);
-                for (int i = start; i <= end; i++) {
-                    stateList.add(i);
-                }
+                stateList.add(Integer.valueOf(state));
             }
-        } else {
-            stateList.add(Integer.valueOf(state));
+        } catch (RuntimeException e) {
+            // 非法 state（如 "abc"、"200-"、"200,xyz"）可能抛 NumberFormatException
+            // 或 ArrayIndexOutOfBoundsException，不应让单条规则崩溃整个任务，返回空集合跳过该规则。
+            return new ArrayList<Integer>();
         }
         return stateList;
     }

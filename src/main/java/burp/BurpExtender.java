@@ -44,7 +44,7 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
 
     public static String Yaml_Path = System.getProperty("user.dir") + "/" + "Rules.yaml";
     public static String EXPAND_NAME = "RouteVulScan";
-    public static String VERSION = "2.0.5";
+    public static String VERSION = "2.0.6";
     private static final String LANGUAGE_PREFERENCE_KEY = "routevulscan.language";
     public static String Download_Yaml_protocol = "https";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
@@ -59,8 +59,8 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
     public Config Config_l;
     public ExecutorService ThreadPool;
     private ExecutorService scanCoordinatorPool;
-    public boolean Carry_head = false;
-    public boolean on_off = false;
+    public volatile boolean Carry_head = false;
+    public volatile boolean on_off = false;
     public final Set<String> history_url = Collections.synchronizedSet(new LinkedHashSet<String>());
     public Map<String, View> views;
     public JTextField Host_txtfield;
@@ -500,10 +500,9 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
             }
             String normalizedUrl = urlC.RemoveUrlParameterValue(requestResponse.request().url());
             String method = requestResponse.request().method();
-            if (urlC.check(method, normalizedUrl)) {
+            if (!urlC.markIfAbsent(method, normalizedUrl)) {
                 return;
             }
-            urlC.addMethodAndUrl(method, normalizedUrl);
             ensureThreadPool();
             submitScan(requestResponse, null, source);
         } catch (Throwable t) {
