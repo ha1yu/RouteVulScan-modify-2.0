@@ -123,7 +123,7 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
             api.http().registerHttpHandler(this);
             logInfo("@Info: Loading RouteVulScan success");
             logInfo("@Version: RouteVulScan " + VERSION);
-            logInfo("@From: Code by 风沙吹奏");
+            logInfo("@From: Code by ha1yu");
         } catch (Throwable t) {
             logError(t("log.pluginInitFailed"), t);
         }
