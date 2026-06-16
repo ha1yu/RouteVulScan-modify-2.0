@@ -187,17 +187,24 @@ public class YamlUtil {
 
     }
 
+    /**
+     * 判定两条规则的业务内容是否相同（忽略 loaded / id / type）。
+     * 用 Objects.equals 做 null 安全比较，并双向往返检查两侧 keySet，
+     * 确保任一侧缺失字段或值为 null 时都能正确判定，避免 NPE 与误判。
+     */
     public static boolean ifmapEqual(Map<String, Object> i, Map<String, Object> oneMap){
-        boolean mapEqual = true;
-        for (String key : i.keySet()){
+        return fieldsEqual(i, oneMap) && fieldsEqual(oneMap, i);
+    }
+
+    private static boolean fieldsEqual(Map<String, Object> src, Map<String, Object> dst){
+        for (String key : src.keySet()){
             if (!key.equals("loaded") && !key.equals("id") && !key.equals("type")){
-                if (!i.get(key).equals(oneMap.get(key))){
-                    mapEqual = false;
-                    break;
+                if (!java.util.Objects.equals(src.get(key), dst.get(key))){
+                    return false;
                 }
             }
         }
-        return mapEqual;
+        return true;
     }
 
 
