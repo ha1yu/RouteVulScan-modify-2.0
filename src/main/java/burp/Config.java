@@ -362,6 +362,8 @@ public class Config {
         // 回填规整后的白名单（空 -> "*"），让用户直观看到实际生效值。
         hostFilterField.setText(burp.getActiveWhitelist());
         hostListsStateLabel.setText(t("prompt.hostListsSaved"));
+        // 弹窗给出明确反馈，避免反馈 label 过于隐蔽导致"点了没反应"的感觉。
+        JOptionPane.showMessageDialog(one, t("prompt.hostListsSaved"), t("dialog.info"), JOptionPane.INFORMATION_MESSAGE);
         updateStatusLabel();
     }
 
