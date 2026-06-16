@@ -70,7 +70,7 @@ mvn clean package
 After the build completes, the artifact is located at:
 
 ```bash
-target/RouteVulScan-V2.0.4.jar
+target/RouteVulScan-V2.0.5.jar
 ```
 
 ## Installation
@@ -81,7 +81,7 @@ Open the following in Burp Suite:
 Extender -> Extensions -> Add
 ```
 
-Select `target/RouteVulScan-V2.0.4.jar` to load the extension.
+Select `target/RouteVulScan-V2.0.5.jar` to load the extension.
 
 ## Usage
 
@@ -98,7 +98,9 @@ Select `target/RouteVulScan-V2.0.4.jar` to load the extension.
 - The whitelist and blacklist take effect only for **passive scanning**; the right-click active scan is not restricted by them.
 - The whitelist keeps the original host-filter wildcard rules (`.` is escaped to `\.`, `*` becomes `.*?`).
 - The blacklist accepts multiple domains separated by commas and matches the host by **substring** (case-insensitive). Note that look-alike substrings may be false positives (e.g. `evil.com` also matches `notevil.com`).
-- Editing the input fields does **not** take effect until you click "Save Lists", which also writes the values to the Burp configuration. Until saved, the scanner keeps using the last saved values.
+- Editing the input fields does **not** take effect until you click "Save Lists". Until saved, the scanner keeps using the last saved values.
+- The whitelist/blacklist are persisted as top-level keys (`filter_host` / `black_host`) in `Rules.yaml`, alongside the rules for easy version control. Values are retained across Burp restarts and plugin reloads.
+- When downloading rules from the cloud, if the remote `Rules.yaml` explicitly provides non-default `filter_host` / `black_host`, the local values are overridden.
 
 ## Rule Description
 

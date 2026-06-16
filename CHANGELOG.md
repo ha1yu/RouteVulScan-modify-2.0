@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-06-17 / v2.0.5
+
+### 变更
+
+- **黑白名单持久化迁移到 `Rules.yaml`**：白名单与黑名单不再通过 Burp `preferences()` 存储，改用 `Rules.yaml` 顶层 key `filter_host`（白名单）与 `black_host`（黑名单，逗号分隔）。配合规则文件版本化管理，重启 Burp 或重载插件后仍保留。
+- **云端下载支持覆盖黑白名单**：云端 `Rules.yaml` 若显式提供非默认值的 `filter_host` / `black_host`，下载合并后会覆盖本地值并即时刷新配置页；云端未提供（或为默认值 `*` / 空）时保留本地值。
+- 配置页保存名单后，`Rules.yaml` 顶层结构固定为 `filter_host`、`black_host`、`Load_List` 顺序输出，便于阅读与版本对比。
+
+### 修复
+
+- 修复重复点击「云端下载规则」时的 `NullPointerException`：第二次下载时本地已合并云端规则，`ifmapEqual` 比较到 `method: null` 等字段触发 NPE。改为 `Objects.equals` 做 null 安全比较，并补齐双向往返判等的对称性。
+- 修复 `MergerUpdateYamlFunc` 用云端默认值（`*` / 空）误覆盖本地自定义黑白名单的问题：仅当云端值为非默认值时才覆盖。
+- 修复 `YamlUtil.readYaml` / `writeYaml` / `readStrYaml` 只 round-trip `Load_List` 一个顶层 key 的问题：通用化后所有顶层 key 均可保留。
+- 修复 `removeYaml` / `updateYaml` / `addYaml` 编辑规则时会误删黑白名单的问题：改为「读全量 → 只替换 Load_List → 写回全量」。
+- 修复 `MergerUpdateYamlFunc` 中 `(int) zidian.get("id")` 对字符串型 id 的 `ClassCastException`，改用 `Number` 安全转换。
+- 修复保存名单后 `filter_host` / `black_host` 被写到 `Rules.yaml` 末尾的问题：`writeYaml` 改用 `LinkedHashMap` 按固定顺序输出。
+
+### 新增
+
+- 新增单元测试 `src/test/java/`，共 **38 个用例**（`YamlUtilTest` 29 + `ParseBlacklistTest` 9），覆盖：YAML 读写 round-trip、host key 处理、编辑规则不丢名单、`ifmapEqual` null 安全与对称性、云端下载合并、黑白名单解析，以及输出顺序回归。
+
 ## 2026-06-16 / v2.0.4
 
 ### 新增

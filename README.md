@@ -67,7 +67,7 @@ mvn clean package
 构建完成后，产物位于：
 
 ```bash
-target/RouteVulScan-V2.0.4.jar
+target/RouteVulScan-V2.0.5.jar
 ```
 
 ## 安装方式
@@ -78,7 +78,7 @@ target/RouteVulScan-V2.0.4.jar
 Extender -> Extensions -> Add
 ```
 
-选择 `target/RouteVulScan-V2.0.4.jar` 即可加载。
+选择 `target/RouteVulScan-V2.0.5.jar` 即可加载。
 
 ## 使用说明
 
@@ -95,7 +95,9 @@ Extender -> Extensions -> Add
 - 白名单与黑名单仅在**被动扫描**生效；右键主动扫描不受其限制。
 - 白名单沿用原主机过滤的通配符规则（`.` 转义为 `\.`，`*` 转为 `.*?`）。
 - 黑名单支持多个域名，用英文逗号分隔，按**子串匹配**（忽略大小写）拦截 host。注意同形子串可能被误伤（例如填 `evil.com` 也会命中 `notevil.com`）。
-- 编辑输入框后**点击「保存名单」才生效**并写入 Burp 配置；不点保存，扫描仍使用上次保存的值。
+- 编辑输入框后**点击「保存名单」才生效**；不点保存，扫描仍使用上次保存的值。
+- 黑白名单持久化在 `Rules.yaml` 顶层（`filter_host` 白名单、`black_host` 黑名单），与规则同文件、便于版本化管理；重启 Burp 或重载插件后仍保留。
+- 云端下载规则时，若云端 `Rules.yaml` 显式提供非默认值的 `filter_host` / `black_host`，会覆盖本地黑白名单。
 
 ## 规则说明
 

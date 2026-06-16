@@ -367,6 +367,19 @@ public class Config {
         updateStatusLabel();
     }
 
+    /**
+     * 用 BurpExtender 当前的黑白名单快照回填两个输入框。
+     * 供云端下载覆盖黑白名单后，在 EDT 调用以同步 UI 显示。
+     */
+    public void applyHostListsFromBurp() {
+        if (hostFilterField == null || blacklistField == null) {
+            return;
+        }
+        hostFilterField.setText(burp.getActiveWhitelist());
+        blacklistField.setText(burp.getActiveBlacklistJoined());
+        updateStatusLabel();
+    }
+
     private void updateStatusLabel() {
         if (setupSummaryLabel == null) {
             return;

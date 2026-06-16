@@ -33,9 +33,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -47,10 +44,8 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
 
     public static String Yaml_Path = System.getProperty("user.dir") + "/" + "Rules.yaml";
     public static String EXPAND_NAME = "RouteVulScan";
-    public static String VERSION = "2.0.4";
+    public static String VERSION = "2.0.5";
     private static final String LANGUAGE_PREFERENCE_KEY = "routevulscan.language";
-    private static final String WHITELIST_PREFERENCE_KEY = "routevulscan.whitelist";
-    private static final String BLACKLIST_PREFERENCE_KEY = "routevulscan.blacklist";
     public static String Download_Yaml_protocol = "https";
     public static String Download_Yaml_host = "raw.githubusercontent.com";
     public static int Download_Yaml_port = 443;
@@ -91,8 +86,10 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
         this.logging = api.logging();
         staticLogging = this.logging;
         I18n.setLanguage(loadLanguagePreference());
-        activeWhitelist = loadHostListPreference(WHITELIST_PREFERENCE_KEY, "*");
-        activeBlacklist = parseBlacklist(loadHostListPreference(BLACKLIST_PREFERENCE_KEY, ""));
+        // 黑白名单从 Rules.yaml 读取（顶层 key filter_host / black_host）。
+        Map<String, Object> hostYaml = YamlUtil.readYaml(Yaml_Path);
+        activeWhitelist = YamlUtil.readHostFilter(hostYaml, "*");
+        activeBlacklist = parseBlacklist(YamlUtil.readBlackHost(hostYaml, ""));
         api.extension().setName(EXPAND_NAME);
         api.extension().registerUnloadingHandler(new ExtensionUnloadingHandler() {
             @Override
@@ -141,30 +138,28 @@ public class BurpExtender implements BurpExtension, HttpHandler, ContextMenuItem
         }
     }
 
-    private String loadHostListPreference(String key, String fallback) {
-        if (api == null) {
-            return fallback;
-        }
-        try {
-            String value = api.persistence().preferences().getString(key);
-            return value == null ? fallback : value;
-        } catch (Throwable t) {
-            return fallback;
-        }
-    }
-
     /**
-     * 同时保存白名单与黑名单：刷新实时过滤快照并写入 Burp preferences（重启保留）。
-     * 仅在 EDT（保存按钮回调）中调用，故对 volatile 字段的写是安全的。
+     * 同时保存白名单与黑名单：刷新实时过滤快照并写入 Rules.yaml（顶层 key
+     * filter_host / black_host，重启保留）。仅在 EDT（保存按钮回调）中调用。
      */
     public void saveHostLists(String whitelist, String blacklist) {
         String trimmedWhitelist = whitelist == null ? "" : whitelist.trim();
         activeWhitelist = trimmedWhitelist.isEmpty() ? "*" : trimmedWhitelist;
-        activeBlacklist = parseBlacklist(blacklist);
-        if (api != null) {
-            api.persistence().preferences().setString(WHITELIST_PREFERENCE_KEY, trimmedWhitelist);
-            api.persistence().preferences().setString(BLACKLIST_PREFERENCE_KEY, blacklist == null ? "" : blacklist.trim());
-        }
+        String trimmedBlacklist = blacklist == null ? "" : blacklist.trim();
+        activeBlacklist = parseBlacklist(trimmedBlacklist);
+        YamlUtil.writeHostLists(Yaml_Path, activeWhitelist, trimmedBlacklist);
+    }
+
+    /**
+     * 从 Rules.yaml 重读黑白名单并刷新内存快照，供云端下载覆盖后调用。
+     * 返回 [whitelist, blacklistJoined] 便于 UI 回填；调用方应在 EDT。
+     */
+    public String[] reloadHostListsFromYaml() {
+        Map<String, Object> hostYaml = YamlUtil.readYaml(Yaml_Path);
+        activeWhitelist = YamlUtil.readHostFilter(hostYaml, "*");
+        String black = YamlUtil.readBlackHost(hostYaml, "");
+        activeBlacklist = parseBlacklist(black);
+        return new String[]{activeWhitelist, black};
     }
 
     public String getActiveWhitelist() {

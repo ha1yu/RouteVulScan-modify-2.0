@@ -35,6 +35,11 @@ public class RuleDownloadTask implements Runnable {
             Map<String, Object> downloadedRules = downloadRules();
             YamlUtil.MergerUpdateYamlFunc(downloadedRules);
             SwingUtilities.invokeLater(() -> {
+                // 云端可能覆盖了黑白名单：重读刷新内存快照并回填配置页输入框。
+                burp.reloadHostListsFromYaml();
+                if (burp.Config_l != null) {
+                    burp.Config_l.applyHostListsFromBurp();
+                }
                 Bfunc.show_yaml(burp);
                 showMessage(burp.t("rules.updateSuccess"), JOptionPane.INFORMATION_MESSAGE);
             });
