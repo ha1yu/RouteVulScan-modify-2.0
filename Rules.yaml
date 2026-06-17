@@ -1,5 +1,5 @@
 filter_host: '*'
-black_host: '*.baidu.com,*.qianxin.com'
+black_host: 'baidu.com,qianxin.com'
 Load_List:
   - {re: nacos, name: Nacos, id: 1, state: '200', url: /nacos/index.html, info: Nacos
     Find!!!, type: default, loaded: true}
