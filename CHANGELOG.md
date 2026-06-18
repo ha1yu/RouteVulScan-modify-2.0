@@ -8,6 +8,12 @@
 - 修复 `StatusCodeProc` 对非法 `state`（`null` / 空 / `abc` / `200-` / `200,xyz` 等）抛 `NumberFormatException` 或 `ArrayIndexOutOfBoundsException`，导致该规则静默失败。改为 null/空校验 + 捕获 `RuntimeException` 返回空集合跳过。
 - 修复 `on_off`（被动扫描开关）与 `Carry_head`（携带请求头开关）跨线程读写未声明 `volatile`，导致 EDT 切换后扫描线程可能长期看不到新值（开关"似乎没生效"）。两个字段改为 `volatile`。
 - 修复 `UrlRepeat` 用非线程安全 `HashMap` 在并发 HTTP 回调下损坏表结构的风险，改用 `ConcurrentHashMap`；并把去重的 check-then-act 两步合并为原子的 `markIfAbsent`，消除并发重复扫描竞态。
+- 修复高 DPI 缩放（>100%）下配置页「保存名单」按钮被遮挡：黑白名单文本框列数由 28 缩至 14，避免单行 `FlowLayout` 总宽超出可视区。
+- 移除保存名单底部冗余的灰色反馈 `hostListsStateLabel`（保存已有弹窗反馈，label 重复且过隐蔽），简化 `southPanel` 布局。
+
+### 变更
+
+- 默认黑名单由无效的通配形式 `*.baidu.com,*.qianxin.com` 改为生效的裸域名 `baidu.com,qianxin.com`（黑名单走子串匹配，`*` 不被当通配符，原值实际无法拦截）。
 
 ### 新增
 
