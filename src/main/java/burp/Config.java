@@ -23,7 +23,6 @@ public class Config {
     private JTextField hostFilterField;
     private JTextField blacklistField;
     private JButton saveHostListsButton;
-    private JLabel hostListsStateLabel;
     private JComboBox<LanguageOption> languageBox;
     private JLabel setupSummaryLabel;
     private JLabel progressSummaryLabel;
@@ -112,12 +111,12 @@ public class Config {
         });
 
         // 白名单：从已加载的持久化快照回填，编辑文本不立即生效，需点击保存按钮才应用并持久化。
-        hostFilterField = new JTextField(burp.getActiveWhitelist(), 28);
+        hostFilterField = new JTextField(burp.getActiveWhitelist(), 14);
         hostFilterField.getDocument().addDocumentListener(SimpleDocumentListener.onChange(this::syncHostFilter));
         burp.Host_txtfield = hostFilterField;
 
         // 黑名单：逗号分隔，子串匹配，与白名单共用一个保存按钮。
-        blacklistField = new JTextField(burp.getActiveBlacklistJoined(), 28);
+        blacklistField = new JTextField(burp.getActiveBlacklistJoined(), 14);
         blacklistField.setToolTipText(t("tooltip.blacklist"));
         blacklistField.getDocument().addDocumentListener(SimpleDocumentListener.onChange(this::updateStatusLabel));
 
@@ -152,15 +151,8 @@ public class Config {
         setupSummaryLabel = new JLabel();
         setupSummaryLabel.setForeground(new Color(80, 80, 80));
 
-        hostListsStateLabel = new JLabel(" ");
-        hostListsStateLabel.setForeground(new Color(80, 80, 80));
-
-        JPanel southPanel = new JPanel(new BorderLayout(12, 2));
-        southPanel.add(setupSummaryLabel, BorderLayout.NORTH);
-        southPanel.add(hostListsStateLabel, BorderLayout.SOUTH);
-
         panel.add(controls, BorderLayout.NORTH);
-        panel.add(southPanel, BorderLayout.SOUTH);
+        panel.add(setupSummaryLabel, BorderLayout.SOUTH);
         updateStatusLabel();
         return panel;
     }
@@ -361,7 +353,6 @@ public class Config {
         burp.saveHostLists(whitelist, blacklist);
         // 回填规整后的白名单（空 -> "*"），让用户直观看到实际生效值。
         hostFilterField.setText(burp.getActiveWhitelist());
-        hostListsStateLabel.setText(t("prompt.hostListsSaved"));
         // 弹窗给出明确反馈，避免反馈 label 过于隐蔽导致"点了没反应"的感觉。
         JOptionPane.showMessageDialog(one, t("prompt.hostListsSaved"), t("dialog.info"), JOptionPane.INFORMATION_MESSAGE);
         updateStatusLabel();
